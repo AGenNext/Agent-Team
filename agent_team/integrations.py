@@ -1,7 +1,7 @@
 """Integration hook models for the AGenNext agent ecosystem.
 
 Agent-Team coordinates work but does not own skills, model routing, evaluation,
-benchmarks, trust, analytics, research, frameworks, environments, or schemas.
+benchmarks, trust, analytics, research, maturity, frameworks, environments, or schemas.
 These lightweight refs keep ownership boundaries explicit while giving product
 repos a stable integration shape.
 """
@@ -27,6 +27,7 @@ class IntegrationOwner(StrEnum):
     AGENT_TRUST = "Agent-Trust"
     AGENT_ANALYTICS = "Agent-Analytics"
     AGENT_RESEARCH = "Agent-Research"
+    AGENT_MATURITY = "Agent-Maturity"
     AGENT_FRAMEWORKS = "Agent-Frameworks"
     AGENT_ENVIRONMENT = "Agent-Environment"
     AGENT_GRAPH = "Agent-Graph"
@@ -68,6 +69,7 @@ class TeamExecutionContext(BaseModel):
     trust_refs: list[str] = Field(default_factory=list)
     analytics_refs: list[str] = Field(default_factory=list)
     research_refs: list[str] = Field(default_factory=list)
+    maturity_refs: list[str] = Field(default_factory=list)
     framework_ref: str | None = None
     environment_ref: str | None = None
     schema_refs: list[str] = Field(default_factory=list)
@@ -136,6 +138,17 @@ def default_ecosystem_hooks() -> list[EcosystemHook]:
             owner=IntegrationOwner.AGENT_ANALYTICS,
             purpose="Analytics events and improvement metrics",
             reference="Agent-Analytics/docs/agent-analytics-contract.md",
+        ),
+        EcosystemHook(
+            owner=IntegrationOwner.AGENT_RESEARCH,
+            purpose="Research evidence and research-to-decision traceability",
+            reference="Agent-Research/contracts/research-contract.md",
+            required_for_human_handoff=False,
+        ),
+        EcosystemHook(
+            owner=IntegrationOwner.AGENT_MATURITY,
+            purpose="Maturity levels and production/enterprise readiness criteria",
+            reference="Agent-Maturity/contracts/maturity-model.md",
         ),
         EcosystemHook(
             owner=IntegrationOwner.AGENT_FRAMEWORKS,
