@@ -5,7 +5,7 @@ runtime_profile: k8smicro
 framework_adapter: langgraph
 
 mission: >
-  Plan, evaluate, secure, deploy, monitor, optimize, and govern OVH/Kimsufi
+  Plan, evaluate, secure, deploy, monitor, optimize, bill, and govern OVH/Kimsufi
   bare-metal k8smicro infrastructure using AGenNext runtime layers.
 
 agents:
@@ -32,8 +32,17 @@ agents:
       - security.preflight
       - linux.harden_node
 
+  - id: billing_agent
+    role: Manages billing, subscriptions, payment intents, AP/AR ledger state, proof, acknowledgement, and reconciliation
+    required_skills:
+      - pay.create_payment_intent
+      - pay.track_subscription
+      - pay.record_payer_proof
+      - pay.record_receiver_acknowledgement
+      - pay.reconcile_ledger
+
   - id: deploy_agent
-    role: Invokes deployment machinery after Platform approval
+    role: Invokes deployment machinery after Platform approval and payment/subscription gate passes
     required_skills:
       - k3s.install
       - kubernetes.deploy_manifest
@@ -46,15 +55,17 @@ agents:
       - health.check_kubernetes
 
   - id: monitor_agent
-    role: Watches errors, drift, security gaps, and runtime failures
+    role: Watches errors, drift, security gaps, billing gaps, and runtime failures
     required_skills:
       - monitor.detect_drift
       - monitor.detect_failure
+      - pay.detect_billing_gap
 
   - id: platform_agent
-    role: Final authority for review, deploy, rollback, optimize, and evolve decisions
+    role: Final authority for review, payment authorization, deploy, rollback, optimize, and evolve decisions
     required_skills:
       - platform.final_review
+      - platform.payment_decision
       - platform.deploy_decision
 
 gates:
@@ -67,7 +78,13 @@ gates:
   pre_handoff:
     - Agent-Handoff
     - Agent-Eval
+  pre_payment:
+    - Agent-Pay
+    - Agent-Identity
+    - Agent-IGA
+    - Agent-Platform
   pre_deploy:
+    - Agent-Pay
     - Agent-Eval
     - Agent-Security
     - Agent-Compliance
@@ -76,6 +93,35 @@ gates:
     - Agent-Health
     - Agent-Monitor
     - Agent-Traces
+    - Agent-Pay
+
+billing:
+  provider: Agent-Pay
+  platform_authority: Agent-Platform
+  required_before_deploy: true
+  supported_models:
+    - subscription
+    - usage_based
+    - one_time_setup
+    - managed_service_retainer
+  required_records:
+    - payment_intent
+    - payer_proof
+    - receiver_acknowledgement
+    - payment_ledger
+    - accounts_payable
+    - accounts_receivable
+    - service_delivery_evidence
+    - reconciliation_status
+  lifecycle:
+    - subscription_requested
+    - payment_authorized
+    - payer_proof_submitted
+    - receiver_acknowledged
+    - service_delivery_started
+    - service_delivered
+    - settled
+    - reconciled
 
 surrealdb:
   namespace: agennext
@@ -87,6 +133,10 @@ surrealdb:
     - hook_event
     - trace_event
     - run
+    - payment_intent
+    - payment_ledger
+    - subscription
+    - billing_event
 
 first_target:
   provider: ovh
@@ -95,3 +145,4 @@ first_target:
   runtime: k8smicro
   memory: surrealdb
   identity: waltid
+  billing: agent_pay
