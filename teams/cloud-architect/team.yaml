@@ -1,0 +1,97 @@
+id: cloud-architect-agent-team
+name: Cloud Architect Agent Team
+version: v0.1.0
+runtime_profile: k8smicro
+framework_adapter: langgraph
+
+mission: >
+  Plan, evaluate, secure, deploy, monitor, optimize, and govern OVH/Kimsufi
+  bare-metal k8smicro infrastructure using AGenNext runtime layers.
+
+agents:
+  - id: cloud_architect
+    role: Creates infrastructure architecture and AgentGraph-compatible plans
+    required_skills:
+      - cloud.inspect_server
+      - k3s.install
+      - surrealdb.deploy
+
+  - id: eval_agent
+    role: Scores generated work against Agent-Standard
+    required_skills:
+      - eval.standard_check
+
+  - id: guard_agent
+    role: Screens external inputs, files, links, prompts, and generated commands
+    required_skills:
+      - guard.inspect_input
+
+  - id: security_agent
+    role: Performs pre-deploy vulnerability and hardening checks
+    required_skills:
+      - security.preflight
+      - linux.harden_node
+
+  - id: deploy_agent
+    role: Invokes deployment machinery after Platform approval
+    required_skills:
+      - k3s.install
+      - kubernetes.deploy_manifest
+      - surrealdb.deploy
+
+  - id: health_agent
+    role: Runs health checks after deployment
+    required_skills:
+      - health.check_runtime
+      - health.check_kubernetes
+
+  - id: monitor_agent
+    role: Watches errors, drift, security gaps, and runtime failures
+    required_skills:
+      - monitor.detect_drift
+      - monitor.detect_failure
+
+  - id: platform_agent
+    role: Final authority for review, deploy, rollback, optimize, and evolve decisions
+    required_skills:
+      - platform.final_review
+      - platform.deploy_decision
+
+gates:
+  input:
+    - Agent-Input
+    - Agent-Guard
+  planning:
+    - Agent-Blueprint
+    - Agent-Standard
+  pre_handoff:
+    - Agent-Handoff
+    - Agent-Eval
+  pre_deploy:
+    - Agent-Eval
+    - Agent-Security
+    - Agent-Compliance
+    - Agent-Platform
+  post_deploy:
+    - Agent-Health
+    - Agent-Monitor
+    - Agent-Traces
+
+surrealdb:
+  namespace: agennext
+  database: cloud_architect
+  required_tables:
+    - input_envelope
+    - output_envelope
+    - a2a_handoff
+    - hook_event
+    - trace_event
+    - run
+
+first_target:
+  provider: ovh
+  product: kimsufi_eco
+  cluster: k3s
+  runtime: k8smicro
+  memory: surrealdb
+  identity: waltid
